@@ -5,12 +5,41 @@ var repoNameEl = document.querySelector("#repo-name");
 var getRepoName = function() {
     // assign variable for query string
     var queryString = document.location.search;
-
     // pull repo name from query string by splitting it at "=" and selecting second new string (index 1)
     var repoName = queryString.split("=")[1];
-    
-    getRepoIssues(repoName);
-    repoNameEl.textContent = repoName;
+
+    if (repoName) {
+        // display repo name on page
+        repoNameEl.textContent = repoName;
+
+        getRepoIssues(repoName);
+    } else {
+        // if no repo provided, redirect to homepage
+        document.location.replace("./index.html");
+    }
+};
+
+var getRepoIssues = function(repo) {
+    var apiUrl = "https://api.github.com/repos/" + repo + "/issues?direction=asc";
+
+    fetch(apiUrl)
+        .then(function(response) {
+            // request was successful
+            if (response.ok) {
+                response.json().then(function(data) {
+                    // pass response data to dom function
+                    displayIssues(data);
+
+                    // check if api has paginated issues
+                    if (response.headers.get("Link")) {
+                        displayWarning(repo);
+                    }
+                });
+            } else {
+                // if unsuccessful, redirect to homepage
+                document.location.replace("./index.html");
+            }
+        });
 };
 
 var displayIssues = function(issues) {
@@ -63,28 +92,6 @@ var displayWarning = function(repo) {
 
     // append to warning container
     limitWarningEl.appendChild(linkEl);
-};
-
-var getRepoIssues = function(repo) {
-    var apiUrl = "https://api.github.com/repos/" + repo + "/issues?direction=asc";
-
-    fetch(apiUrl)
-        .then(function(response) {
-            // request was successful
-            if (response.ok) {
-                response.json().then(function(data) {
-                    // pass response data to dom function
-                    displayIssues(data);
-
-                    // check if api had paginated issues
-                    if (response.headers.get("Link")) {
-                        displayWarning(repo);
-                    }
-                });
-            } else {
-                alert("There was a problem with your request!");
-            }
-        });
 };
 
 getRepoName();
